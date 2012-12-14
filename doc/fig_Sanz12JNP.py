@@ -117,31 +117,32 @@ if not(os.path.isfile('figure1.pdf')):
             movie[:, :, i_frame] = translate((image[:, :, i_frame]), [(width/2 + X_0+t*V_X_*width + 1)*N_X/2., (width/2 + Y_0+t*V_Y_*width+1)*N_Y/2])
         return movie
 
-    # I use instead a movie:
+    # I use a natural movie:
     N_frame, N_first = 32., 530
     #image = np.load('~/particles/movie/montypython.npy')[:, ::-1, N_first:(N_first+N_frame)]
-    if not os.path.exists('montypython.npy'):
+    if not os.path.exists('results/montypython.npy'):
     # Download the data
         import urllib
         print "Downloading data, Please Wait "
         opener = urllib.urlopen(
                 'http://invibe.net/LaurentPerrinet/MotionClouds?action=AttachFile&do=get&target=montypython.npy')
-        open('montypython.npy', 'wb').write(opener.read())
+        open('results/montypython.npy', 'wb').write(opener.read())
 
-    image = np.load('montypython.npy')[:, ::-1, N_first:(N_first+N_frame)]
+    image = np.load('results/montypython.npy')[:, ::-1, N_first:(N_first+N_frame)]
     #image = np.load('~/sci/dyva/Motion/particles/movie/montypython.npy')[:, ::-1, N_first:(N_first+N_frame)]
     image -= image.mean()
     image /= np.abs(image).max()
     image += 1
     image /= 2.
-    mc.anim_save(image, 'montypython.npy', display=False, flip=True, vext='.mpg')
+    if not os.path.exists('results/montypython.npy.mpg'):
+        mc.anim_save(image, 'results/montypython.npy', display=False, flip=True, vext='.mpg')
 
     (N_X, N_Y, N_frame) = image.shape
     movie = translation(image)
     (N_X, N_Y, N_frame) = movie.shape
     movie = whitening(movie)
 
-
+    print N_X, N_Y, N_frame
     fx, fy, ft = mc.get_grids(N_X, N_Y, N_frame, sparse=False)
     color = mc.envelope_color(fx, fy, ft) #
     z_noise = color*mc.envelope_speed(fx, fy, ft)
@@ -152,90 +153,93 @@ if not(os.path.isfile('figure1.pdf')):
         movie_ = 1. * randomize_phase(movie, B_angle=B_angle) + .0 * movie_noise
         movie_ -= movie_.mean()
         movie_ /= np.abs(movie_).max()
-        if mc.MAYAVI[:2]=='Ok': mc.cube(fx, fy, ft, mc.rectif(movie_), name=name_ + '_cube')
+        mc.cube(mc.rectif(movie_), name=name_ + '_cube')
         spectrum = np.absolute(np.fft.fftshift(np.fft.fftn(movie_)))# .real # **2 # + z_noise#
     #        img = img[:,::-1,:]
         spectrum /= spectrum.max()
         mc.visualize(spectrum, name=name_)
 
-
-print mc.N_X, mc.N_Y, mc.N_frame
+#print mc.N_X, mc.N_Y, mc.N_frame, mc.MAYAVI
 fx, fy, ft = mc.get_grids(mc.N_X, mc.N_Y, mc.N_frame, sparse=False)
 
-# Figure 2:  \caption{From an impulse to a Motion Cloud. (\textit{A}): The movie corresponding to a typical ``edge", i.e., a moving Gabor patch that corresponds to a localized grating. The Gabor patch being relatively small, for clarity, we zoomed 8 times into the non-zeros values of the image. (\textit{B}): By densely mixing multiple copies of the kernel shown in (A) at random positions, we obtain a Random Phase Texture (RPT), see Supplemental Movie 1. (\textit{C}):  We show here the envelope of the Fourier transform of kernel $K$: inversely, $K$ is the impulse response in image space of the filter defined by this envelope. Due to the linearity of the Fourier transform, apart from a multiplicative constant that vanishes by normalizing the energy of the  RPT to $1$, the spectral envelope of the RPT in (B) is the same as the one of the kernel K shown in (A): $\mathcal{E}_{\bar{\beta}}=\mathcal{F}(K)$. Note that, the spectral energy envelope  of a ``classical" grating would result in a pair of Dirac delta functions centered on the peak of the patches in (C) (the orange ``hot-spots"). Motion Clouds are defined as the subset of such RPTs whose main motion component is a full-field translations and thus characterized by spectral envelopes concentrated on a plane.}
-name = 'grating'
-# making just an impulse
-name_ = os.path.join(mc.figpath, name + '-impulse')
-if mc.anim_exist(name_ + '_cube', vext=mc.ext):
+if not(os.path.isfile('figure2.pdf')):
+    # Figure 2:  \caption{From an impulse to a Motion Cloud. (\textit{A}): The movie corresponding to a typical ``edge", i.e., a moving Gabor patch that corresponds to a localized grating. The Gabor patch being relatively small, for clarity, we zoomed 8 times into the non-zeros values of the image. (\textit{B}): By densely mixing multiple copies of the kernel shown in (A) at random positions, we obtain a Random Phase Texture (RPT), see Supplemental Movie 1. (\textit{C}):  We show here the envelope of the Fourier transform of kernel $K$: inversely, $K$ is the impulse response in image space of the filter defined by this envelope. Due to the linearity of the Fourier transform, apart from a multiplicative constant that vanishes by normalizing the energy of the  RPT to $1$, the spectral envelope of the RPT in (B) is the same as the one of the kernel K shown in (A): $\mathcal{E}_{\bar{\beta}}=\mathcal{F}(K)$. Note that, the spectral energy envelope  of a ``classical" grating would result in a pair of Dirac delta functions centered on the peak of the patches in (C) (the orange ``hot-spots"). Motion Clouds are defined as the subset of such RPTs whose main motion component is a full-field translations and thus characterized by spectral envelopes concentrated on a plane.}
+    name = 'grating'
+    # making just an impulse
+    name_ = os.path.join(mc.figpath, name + '-impulse')
+    if mc.anim_exist(name_ + '_cube', vext=mc.ext):
+        z = mc.envelope_gabor(fx, fy, ft)
+        zoom = 8
+        movie = mc.random_cloud(z, impulse=True)[:(mc.N_X/zoom), :(mc.N_Y/zoom), :(mc.N_frame/zoom)]
+        movie = np.roll(movie, mc.N_frame/zoom, axis=2)
+        mc.cube(mc.rectif(movie), name=name_ + '_cube', do_axis=False)#
+
+if not(os.path.isfile('figure3.pdf')):
+    # Figure 3:   \caption{Equivalent MC representations of some classical stimuli. (\textit{A}, \textit{top}): a narrow-orientation-bandwidth Motion Cloud produced only with vertically oriented kernels and a horizontal mean motion to the right (Supplemental Movie 1). (\textit{Bottom}): The spectral envelopes concentrated on a pair of patches centered on a constant speed surface. Note that this ``speed plane" is thin (as seen by the projection onto the ($f_x$,$f_t$) face), yet it has a finite thickness, resulting in small, local, jittering motion components. ({\textit{B}}) a Motion Cloud illustrating the aperture problem. (\textit{Top}): The stimulus, having oblique preferred orientation ($\theta=\frac{\pi}{4}$ and narrow bandwidth $B_{\theta}=\pi/36$) is moving horizontally and rightwards. However, the perceived speed direction in such a case is biased towards the oblique downwards, i.e., orthogonal to the orientation, consistently with the fact that the best speed plane is ambiguous to detect (Supplemental Movie 2). (\textit{C}): a low-coherence random-dot kinematogram-like Motion Cloud: its orientation and speed bandwidths, $B_{\theta}$ and $B_{V}$ respectively, are large, yielding a low-coherence stimulus in which no edges can be identified (Supplemental Movie 3).} 
+    
+    # A
+    # the "standard MC" :  dense mixing of rightward gabor-like kernales 
     z = mc.envelope_gabor(fx, fy, ft)
-    zoom = 8
-    movie = mc.random_cloud(z, impulse=True)[:(mc.N_X/zoom), :(mc.N_Y/zoom), :(mc.N_frame/zoom)]
-    movie = np.roll(movie, mc.N_frame/zoom, axis=2)
-    if mc.MAYAVI[:2]=='Ok': mc.cube(fx[:(mc.N_X/zoom), :(mc.N_Y/zoom), :(mc.N_frame/zoom)],
-        fy[:(mc.N_X/zoom), :(mc.N_Y/zoom), :(mc.N_frame/zoom)],
-        ft[:(mc.N_X/zoom), :(mc.N_Y/zoom), :(mc.N_frame/zoom)],
-           mc.rectif(movie), name=name_ + '_cube', do_axis=False)#
+    mc.figures(z, name=os.path.join(mc.figpath, name), do_movie=False)
+    
+    # for div in [2, 4]:
+    #     name_ =os.path.join(mc.figpath, name + '-theta-pi-over-' + str(div).replace('.', '_'))
+    #     mc.figures_MC(fx, fy, ft, name_, theta=np.pi/div, do_movie=False)
+    # 
+    # for sigma_div in [.5, 8, 16]:
+    #     name_ = os.path.join(mc.figpath, name + '-B_theta-pi-over-' + str(sigma_div).replace('.', '_'))
+    #     mc.figures_MC(fx, fy, ft, name_, B_theta=np.pi/sigma_div, do_movie=False)
+    # 
+    # B
+    grating = mc.envelope_gabor(fx, fy, ft, theta=np.pi/4, B_theta=np.pi/64)
+    mc.figures(grating , name=os.path.join(mc.figpath, 'aperture'), do_movie=False)
+    # C
+    mc.figures_MC(fx, fy, ft, name=os.path.join(mc.figpath, 'grating-rdk'), B_theta=10., B_V=.5, B_sf=0.01, do_movie=False)
+    
+    # 
+    # for sf_0 in [0.01, 0.4]:
+    #     name_ = figpath + name + '-sf_0-' + str(sf_0).replace('.', '_')
+    #     mc.figures_MC(fx, fy, ft, name_, sf_0=sf_0, do_movie=False)
+    # 
+    # for B_sf in [0.05, 0.15, 0.4]:
+    #     name_ = figpath + name + '-B_sf-' + str(B_sf).replace('.', '_')
+    #     mc.figures_MC(fx, fy, ft, name_, B_sf=B_sf, do_movie=False)
+    # 
 
-# Figure 3:   \caption{Equivalent MC representations of some classical stimuli. (\textit{A}, \textit{top}): a narrow-orientation-bandwidth Motion Cloud produced only with vertically oriented kernels and a horizontal mean motion to the right (Supplemental Movie 1). (\textit{Bottom}): The spectral envelopes concentrated on a pair of patches centered on a constant speed surface. Note that this ``speed plane" is thin (as seen by the projection onto the ($f_x$,$f_t$) face), yet it has a finite thickness, resulting in small, local, jittering motion components. ({\textit{B}}) a Motion Cloud illustrating the aperture problem. (\textit{Top}): The stimulus, having oblique preferred orientation ($\theta=\frac{\pi}{4}$ and narrow bandwidth $B_{\theta}=\pi/36$) is moving horizontally and rightwards. However, the perceived speed direction in such a case is biased towards the oblique downwards, i.e., orthogonal to the orientation, consistently with the fact that the best speed plane is ambiguous to detect (Supplemental Movie 2). (\textit{C}): a low-coherence random-dot kinematogram-like Motion Cloud: its orientation and speed bandwidths, $B_{\theta}$ and $B_{V}$ respectively, are large, yielding a low-coherence stimulus in which no edges can be identified (Supplemental Movie 3).} 
+if not(os.path.isfile('SupplementalMovie1.mpg')):
 
-# A
-# the "standard MC" :  dense mixing of rightward gabor-like kernales 
-z = mc.envelope_gabor(fx, fy, ft)
-mc.figures(z, name=os.path.join(mc.figpath, name), do_movie=False)
-
-# for div in [2, 4]:
-#     name_ =os.path.join(mc.figpath, name + '-theta-pi-over-' + str(div).replace('.', '_'))
-#     mc.figures_MC(fx, fy, ft, name_, theta=np.pi/div, do_movie=False)
-# 
-# for sigma_div in [.5, 8, 16]:
-#     name_ = os.path.join(mc.figpath, name + '-B_theta-pi-over-' + str(sigma_div).replace('.', '_'))
-#     mc.figures_MC(fx, fy, ft, name_, B_theta=np.pi/sigma_div, do_movie=False)
-# 
-# B
-grating = mc.envelope_gabor(fx, fy, ft, theta=np.pi/4, B_theta=np.pi/64)
-mc.figures(grating , name=os.path.join(mc.figpath, 'aperture'), do_movie=False)
-# C
-mc.figures_MC(fx, fy, ft, name=os.path.join(mc.figpath, 'grating-rdk'), B_theta=10., B_V=.5, B_sf=0.01, do_movie=False)
-
-# 
-# for sf_0 in [0.01, 0.4]:
-#     name_ = figpath + name + '-sf_0-' + str(sf_0).replace('.', '_')
-#     mc.figures_MC(fx, fy, ft, name_, sf_0=sf_0, do_movie=False)
-# 
-# for B_sf in [0.05, 0.15, 0.4]:
-#     name_ = figpath + name + '-B_sf-' + str(B_sf).replace('.', '_')
-#     mc.figures_MC(fx, fy, ft, name_, B_sf=B_sf, do_movie=False)
-# 
-
-# Supplemental Movie 1
-# Standard Motion Cloud
-# By densely mixing multiple copies of corresponding to a typical moving edge (i.e., a moving Gabor patch that corresponds to a localized grating) at random positions, we obtain a Random Phase Texture (see Figure 3-A). 
-z = mc.envelope_gabor(fx, fy, ft)
-mc.figures(z, name=os.path.join(mc.figpath, 'SupplementalMovie1'), do_figs=False)
-
-# Supplemental movie 2 
-# Motion Cloud with aperture problem
-# A Motion Cloud illustrating the aperture problem. It is a narrow bandwidth Motion Cloud with a central orientation = pi/4 with respect to the mean direction. The stimulus, having oblique preferred orientation and narrow bandwidth is moving horizontally and rightwards. However, the perceived speed direction in such a case is biased towards the oblique downwards, i.e., orthogonal to the orientation, consistently with the fact that the best speed plane is ambiguous to detect (see Figure 3-B).
-grating = mc.envelope_gabor(fx, fy, ft, theta=np.pi/4, B_theta=np.pi/64)
-mc.figures(grating , name=os.path.join(mc.figpath, 'SupplementalMovie2'), do_figs=False)
-
-# Supplemental movie 3 
-# Low-coherence random-dot kinematogram-like Motion Cloud
-# The orientation and speed bandwidths are large, yielding a low-coherence stimulus in which no edges can be identified (see Figure 3-C).
-mc.figures_MC(fx, fy, ft, name=os.path.join(mc.figpath, 'SupplementalMovie3'), B_theta=10., B_V=.5, B_sf=0.01, do_figs=False)
-
-
-# Figure 4: \caption{Broadband vs. narrowband stimuli. From (\textit{A}) through (\textit{B}) to (\textit{C}) the frequency bandwidth $B_{f}$ increases, while all other parameters (such as $f_{0}$) are kept constant. The Motion Cloud with the broadest bandwidth is thought to best represent natural stimuli, since, as those, it contains many frequency components. (\textit{A}) $B_{f}=0.05$ (Supplemental Movie 4), (\textit{B}) $B_{f}=0.15$ (Supplemental Movie 5) and (\textit{C}) $B_{f}=0.4$ (Supplemental Movie 6).} 
-# for sf_0 in [0.1, 0.2, 0.4]:
-#     name_ = figpath + name + '-sf_0-' + str(sf_0).replace('.', '_')
-#     mc.figures_MC(fx, fy, ft, name_, sf_0=sf_0, B_theta=10., do_movie=False)
-# 
-for B_sf, i_SM in zip([0.05, 0.15, 0.4], [4, 5, 6]):
-    name = os.path.join(mc.figpath, 'grating-B_sf-' + str(B_sf).replace('.', '_'))
-    mc.figures_MC(fx, fy, ft, name, B_sf=B_sf, B_theta=10., do_movie=False)
-
-    name = os.path.join(mc.figpath, 'SupplementalMovie' + str(i_SM))
-    mc.figures_MC(fx, fy, ft, name, B_sf=B_sf, B_theta=10., do_figs=False)
+    # Supplemental Movie 1
+    # Standard Motion Cloud
+    # By densely mixing multiple copies of corresponding to a typical moving edge (i.e., a moving Gabor patch that corresponds to a localized grating) at random positions, we obtain a Random Phase Texture (see Figure 3-A). 
+    z = mc.envelope_gabor(fx, fy, ft)
+    mc.figures(z, name=os.path.join(mc.figpath, 'SupplementalMovie1'), do_figs=False)
+    
+if not(os.path.isfile('SupplementalMovie2.mpg')):
+    # Supplemental movie 2 
+    # Motion Cloud with aperture problem
+    # A Motion Cloud illustrating the aperture problem. It is a narrow bandwidth Motion Cloud with a central orientation = pi/4 with respect to the mean direction. The stimulus, having oblique preferred orientation and narrow bandwidth is moving horizontally and rightwards. However, the perceived speed direction in such a case is biased towards the oblique downwards, i.e., orthogonal to the orientation, consistently with the fact that the best speed plane is ambiguous to detect (see Figure 3-B).
+    grating = mc.envelope_gabor(fx, fy, ft, theta=np.pi/4, B_theta=np.pi/64)
+    mc.figures(grating , name=os.path.join(mc.figpath, 'SupplementalMovie2'), do_figs=False)
+    
+if not(os.path.isfile('SupplementalMovie3.mpg')):
+    # Supplemental movie 3 
+    # Low-coherence random-dot kinematogram-like Motion Cloud
+    # The orientation and speed bandwidths are large, yielding a low-coherence stimulus in which no edges can be identified (see Figure 3-C).
+    mc.figures_MC(fx, fy, ft, name=os.path.join(mc.figpath, 'SupplementalMovie3'), B_theta=10., B_V=.5, B_sf=0.01, do_figs=False)
+    
+if not(os.path.isfile('figure4.pdf')):
+    
+    # Figure 4: \caption{Broadband vs. narrowband stimuli. From (\textit{A}) through (\textit{B}) to (\textit{C}) the frequency bandwidth $B_{f}$ increases, while all other parameters (such as $f_{0}$) are kept constant. The Motion Cloud with the broadest bandwidth is thought to best represent natural stimuli, since, as those, it contains many frequency components. (\textit{A}) $B_{f}=0.05$ (Supplemental Movie 4), (\textit{B}) $B_{f}=0.15$ (Supplemental Movie 5) and (\textit{C}) $B_{f}=0.4$ (Supplemental Movie 6).} 
+    # for sf_0 in [0.1, 0.2, 0.4]:
+    #     name_ = figpath + name + '-sf_0-' + str(sf_0).replace('.', '_')
+    #     mc.figures_MC(fx, fy, ft, name_, sf_0=sf_0, B_theta=10., do_movie=False)
+    # 
+    for B_sf, i_SM in zip([0.05, 0.15, 0.4], [4, 5, 6]):
+        name = os.path.join(mc.figpath, 'grating-B_sf-' + str(B_sf).replace('.', '_'))
+        mc.figures_MC(fx, fy, ft, name, B_sf=B_sf, B_theta=10., do_movie=False)
+    
+        name = os.path.join(mc.figpath, 'SupplementalMovie' + str(i_SM))
+        mc.figures_MC(fx, fy, ft, name, B_sf=B_sf, B_theta=10., do_figs=False)
 
 
 # Supplemental movie 4 
@@ -274,48 +278,49 @@ for B_sf, i_SM in zip([0.05, 0.15, 0.4], [4, 5, 6]):
 #     mc.figures(z, name_, do_movie=False)
 # 
 # 
-# Figure 5 : \caption{Competing Motion Clouds. (\textit{A}): A narrow-orientation-bandwidth Motion Cloud with explicit noise. A red noise envelope was added to the global envelop of a Motion Cloud with a bandwidth in the orientation domain (Supplemental Movie  7). (\textit{B}): Two Motion Clouds with same motion but different preferred orientation were added together, yielding a plaid-like Motion Cloud texture (Supplemental Movie 8). (\textit{C}): Two Motion Clouds with opposite velocity directions were added, yielding a texture similar to a ``counter-phase'' grating (Supplemental Movie 9). Note that the crossed shape in the $f_x-f_t$ plane is a signature of the opposite velocity directions, while two gratings with the same spatial frequency and in opposite directions would generate a flickering stimulus with energy concentrated on the $f_t$ plane.}
-
-name = 'grating-noise'
-noise = mc.envelope_color(fx, fy, ft, alpha=1.)
-grating = mc.envelope_gabor(fx, fy, ft)
-mc.figures(1.e4*noise + grating, os.path.join(mc.figpath, name), do_movie=False)
-
-# Supplemental movie 7 
-# A narrow-orientation-bandwidth Motion Cloud with explicit noise. 
-# A red noise envelope was added to the global envelop of a Motion Cloud with a bandwidth in the orientation domain (see Figure 5-A).
-mc.figures(1.e4*noise + grating, name=os.path.join(mc.figpath, 'SupplementalMovie7'), do_figs=False)
-
-# B
-diag1 = mc.envelope_gabor(fx, fy, ft, theta=np.pi/4.)
-diag2 = mc.envelope_gabor(fx, fy, ft, theta=-np.pi/4.)
-mc.figures(diag1 + diag2, name=os.path.join(mc.figpath, 'plaid'), do_movie=False)
-
-# Supplemental movie 8 
-# Plaid-like Motion Cloud.
-# Two Motion Clouds with same motion but different preferred orientation were added together, yielding a plaid-like Motion Cloud texture (see Figure 5-B).
-mc.figures(diag1 + diag2, name=os.path.join(mc.figpath, 'SupplementalMovie8'), do_figs=False)
-
-# C
-name = 'counterphase_grating'
-right = mc.envelope_gabor(fx, fy, ft, V_X=1 , B_theta=10.)
-left = mc.envelope_gabor(fx, fy, ft, V_X=-1. , B_theta=10.)
-# thanks to the addititivity of MCs 
-mc.figures(left + right, name=os.path.join(mc.figpath, name), do_movie=False)
-
-#name = 'counterphase_grating2'
-#right = mc.envelope_gabor(fx, fy, ft, V_X=1 )
-#left = mc.envelope_gabor(fx, fy, ft, V_X=-1.)
-#mc.figures(left + right, name=os.path.join(mc.figpath, name), do_movie=False)
-#
-#name = 'counterphase_grating3'
-#grating = mc.envelope_gabor(fx, fy, ft, V_X=0, B_V=1.5, B_theta=np.pi/4, B_sf=0.01)
-#mc.figures(grating , name=os.path.join(mc.figpath, name), do_movie=False)
-
-# Supplemental movie 9 
-# Counterphase-like MC
-# Two Motion Clouds with opposite velocity directions were added, yielding a texture similar to a "counter-phase" grating. Note that the crossed shape in the $f_x-f_t$ plane is a signature of the opposite velocity directions (see Figure 5-C).
-mc.figures(left + right, name=os.path.join(mc.figpath, 'SupplementalMovie9'), do_figs=False)
+if not(os.path.isfile('figure5.pdf')):
+    # Figure 5 : \caption{Competing Motion Clouds. (\textit{A}): A narrow-orientation-bandwidth Motion Cloud with explicit noise. A red noise envelope was added to the global envelop of a Motion Cloud with a bandwidth in the orientation domain (Supplemental Movie  7). (\textit{B}): Two Motion Clouds with same motion but different preferred orientation were added together, yielding a plaid-like Motion Cloud texture (Supplemental Movie 8). (\textit{C}): Two Motion Clouds with opposite velocity directions were added, yielding a texture similar to a ``counter-phase'' grating (Supplemental Movie 9). Note that the crossed shape in the $f_x-f_t$ plane is a signature of the opposite velocity directions, while two gratings with the same spatial frequency and in opposite directions would generate a flickering stimulus with energy concentrated on the $f_t$ plane.}
+    
+    name = 'grating-noise'
+    noise = mc.envelope_color(fx, fy, ft, alpha=1.)
+    grating = mc.envelope_gabor(fx, fy, ft)
+    mc.figures(1.e4*noise + grating, os.path.join(mc.figpath, name), do_movie=False)
+    
+    # Supplemental movie 7 
+    # A narrow-orientation-bandwidth Motion Cloud with explicit noise. 
+    # A red noise envelope was added to the global envelop of a Motion Cloud with a bandwidth in the orientation domain (see Figure 5-A).
+    mc.figures(1.e4*noise + grating, name=os.path.join(mc.figpath, 'SupplementalMovie7'), do_figs=False)
+    
+    # B
+    diag1 = mc.envelope_gabor(fx, fy, ft, theta=np.pi/4.)
+    diag2 = mc.envelope_gabor(fx, fy, ft, theta=-np.pi/4.)
+    mc.figures(diag1 + diag2, name=os.path.join(mc.figpath, 'plaid'), do_movie=False)
+    
+    # Supplemental movie 8 
+    # Plaid-like Motion Cloud.
+    # Two Motion Clouds with same motion but different preferred orientation were added together, yielding a plaid-like Motion Cloud texture (see Figure 5-B).
+    mc.figures(diag1 + diag2, name=os.path.join(mc.figpath, 'SupplementalMovie8'), do_figs=False)
+    
+    # C
+    name = 'counterphase_grating'
+    right = mc.envelope_gabor(fx, fy, ft, V_X=1 , B_theta=10.)
+    left = mc.envelope_gabor(fx, fy, ft, V_X=-1. , B_theta=10.)
+    # thanks to the addititivity of MCs 
+    mc.figures(left + right, name=os.path.join(mc.figpath, name), do_movie=False)
+    
+    #name = 'counterphase_grating2'
+    #right = mc.envelope_gabor(fx, fy, ft, V_X=1 )
+    #left = mc.envelope_gabor(fx, fy, ft, V_X=-1.)
+    #mc.figures(left + right, name=os.path.join(mc.figpath, name), do_movie=False)
+    #
+    #name = 'counterphase_grating3'
+    #grating = mc.envelope_gabor(fx, fy, ft, V_X=0, B_V=1.5, B_theta=np.pi/4, B_sf=0.01)
+    #mc.figures(grating , name=os.path.join(mc.figpath, name), do_movie=False)
+    
+    # Supplemental movie 9 
+    # Counterphase-like MC
+    # Two Motion Clouds with opposite velocity directions were added, yielding a texture similar to a "counter-phase" grating. Note that the crossed shape in the $f_x-f_t$ plane is a signature of the opposite velocity directions (see Figure 5-C).
+    mc.figures(left + right, name=os.path.join(mc.figpath, 'SupplementalMovie9'), do_figs=False)
 
 
 # Stitching sub-figures together

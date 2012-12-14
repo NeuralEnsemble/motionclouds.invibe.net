@@ -57,43 +57,6 @@ B_V = .2
 theta = 0.
 B_theta = np.pi/32.
 loggabor = True
-vext = '.mpg'
-ext = '.png'
-T_movie = 8. # this value defines the duration of a temporal period
-fps = int(N_frame / T_movie)
-
-# display parameters
-try:
-    import progressbar
-    PROGRESS = True
-except:
-    PROGRESS = False
-
-# os.environ['ETS_TOOLKIT'] = 'qt4' # Works in Mac
-# os.environ['ETS_TOOLKIT'] = 'wx' # Works in Debian
-MAYAVI = 'Import'
-#MAYAVI = 'Avoid' # uncomment to avoid generating mayavi visualizations (and save some memory...)
-def import_mayavi():
-    global MAYAVI, mlab
-    if (MAYAVI == 'Import'):
-        try:
-            from mayavi import mlab
-            MAYAVI = 'Ok : New and shiny'
-            print('Imported Mayavi')
-        except:
-            try:
-                from enthought.mayavi import mlab
-                print('Seems you have an old implementation of MayaVi, but things should work')
-                MAYAVI = 'Ok but old'
-                print('Imported Mayavi')
-            except:
-                print('Could not import Mayavi')
-                MAYAVI = False
-    elif (MAYAVI == 'Ok : New and shiny') or (MAYAVI == 'Ok but old'):
-        pass # no need to import that again
-    else:
-        print('We have chosen not to import Mayavi')
-# Trick from http://github.enthought.com/mayavi/mayavi/tips.html : to use offscreen rendering, try xvfb :1 -screen 0 1280x1024x24 in one terminal, export DISPLAY=:1 before you run your script
 
 figpath = 'results/'
 if not(os.path.isdir(figpath)):os.mkdir(figpath)
@@ -158,7 +121,7 @@ def envelope_speed(fx, fy, ft, V_X=V_X, V_Y=V_Y, B_V=B_V):
      A speed of V_X=1 corresponds to an average displacement of 1/N_X per frame.
      To achieve one spatial period in one temporal period, you should scale by
      V_scale = N_X/float(N_frame)
-     If N_X=N_Y=N_frame and V=1, then it is one spati                                                                       al period in one temporal
+     If N_X=N_Y=N_frame and V=1, then it is one spatial period in one temporal
      period. it can be seen in the MC cube. Define ft_0 = N_X/N_frame
 
     Run 'test_speed.py' to explore the speed parameters
@@ -227,6 +190,43 @@ shape
 
 
 ########################## Display Tools #######################################
+vext = '.mpg'
+ext = '.png'
+T_movie = 8. # this value defines the duration of a temporal period
+fps = int(N_frame / T_movie)
+
+# display parameters
+try:
+    import progressbar
+    PROGRESS = True
+except:
+    PROGRESS = False
+
+# os.environ['ETS_TOOLKIT'] = 'qt4' # Works in Mac
+# os.environ['ETS_TOOLKIT'] = 'wx' # Works in Debian
+MAYAVI = 'Import'
+#MAYAVI = 'Avoid' # uncomment to avoid generating mayavi visualizations (and save some memory...)
+def import_mayavi():
+    global MAYAVI, mlab
+    if (MAYAVI == 'Import'):
+        try:
+            from mayavi import mlab
+            MAYAVI = 'Ok : New and shiny'
+            print('Imported Mayavi')
+        except:
+            try:
+                from enthought.mayavi import mlab
+                print('Seems you have an old implementation of MayaVi, but things should work')
+                MAYAVI = 'Ok but old'
+                print('Imported Mayavi')
+            except:
+                print('Could not import Mayavi')
+                MAYAVI = False
+    elif (MAYAVI == 'Ok : New and shiny') or (MAYAVI == 'Ok but old'):
+        pass # no need to import that again
+    else:
+        print('We have chosen not to import Mayavi')
+# Trick from http://github.enthought.com/mayavi/mayavi/tips.html : to use offscreen rendering, try xvfb :1 -screen 0 1280x1024x24 in one terminal, export DISPLAY=:1 before you run your script
 
 def get_size(mat):
     """ 

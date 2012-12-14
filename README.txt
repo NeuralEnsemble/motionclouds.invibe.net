@@ -25,6 +25,16 @@ This package consists of:
   1. optional: {{{ffmpeg}}} is used to generate movies.
   1. optional: {{{matplotlib}}}, {{{scipy}}} (with PIL support) and {{{imagemagick}}} are used to generate figures in the documentation.
   1. optional: {{{progressbar}}} for displaying progress of encoding.
+  1. optional: {{{texlive-latex-recommended  latexmk latexdiff}}} to compile the documentation 
+
+== download ===
+
+ * to get the latest version, download the current state from the repository:
+{{{
+git clone https://github.com/meduz/MotionClouds.git 
+}}}
+
+ * other sources exist to get a stable release, such as [[http://senselab.med.yale.edu/modeldb/ShowModel.asp?model=146953|ModelDb]].
 
 === installation using custom scripts ===
 
@@ -55,6 +65,10 @@ sudo easy_install progressbar
 sudo aptitude install ffmpeg
 }}}
 
+ * Install !LaTeX to compile the documentation: {{{
+sudo aptitude install texlive-latex-recommended latexmk latexdiff
+}}}
+
  * when creating MoiMoin pages, it is useful to package images in a zip file: {{{
 aptitude install zip
 }}}
@@ -62,6 +76,8 @@ aptitude install zip
 === Installation on MacOsX: EPD ===
 
  * Enthought distributes a battery-included installation of python. It is recommended to use the i386 version as the 64-bits version lacks a proper compilation of MayaVi. You will still need {{{ffmpeg}}} to make movies (see HomeBrew or MacPorts section below).
+
+ * Similarly, to compile the documentation, I recommend to install !TexLive from the !MacTex distribution available @ https://www.tug.org/mactex/
 
 === Installation on MacOsX: HomeBrew (for more experienced users) ===
 
